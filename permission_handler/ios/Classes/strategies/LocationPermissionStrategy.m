@@ -82,11 +82,11 @@
     if (_permissionStatusHandler == nil || @(_requestedPermission) == nil) {
         return;
     }
-
+    
     if ((_requestedPermission == PermissionGroupLocationAlways && status == kCLAuthorizationStatusAuthorizedWhenInUse)) {
-            return;
+        return;
     }
-
+    
     PermissionStatus permissionStatus = [LocationPermissionStrategy
                                          determinePermissionStatus:_requestedPermission authorizationStatus:status];
     
@@ -130,13 +130,25 @@
                 return PermissionStatusPermanentlyDenied;
             case kCLAuthorizationStatusAuthorizedWhenInUse:
             case kCLAuthorizationStatusAuthorizedAlways:
-                return PermissionStatusGranted;
+            {
+                if (@available(iOS 14.0, *)) {
+                    switch ([[CLLocationManager new] accuracyAuthorization]) { //temporary code, will be removed after plugin update
+                        case CLAccuracyAuthorizationReducedAccuracy:
+                            return PermissionStatusLimited;
+                        case CLAccuracyAuthorizationFullAccuracy:
+                            return PermissionStatusGranted;
+                    }
+                }
+                else{
+                    return PermissionStatusGranted;
+                }
+            }
         }
     }
     
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
+    
     switch (authorizationStatus) {
         case kCLAuthorizationStatusNotDetermined:
             return PermissionStatusDenied;
@@ -149,9 +161,9 @@
         default:
             return PermissionStatusDenied;
     }
-
+    
 #pragma clang diagnostic pop
-
+    
 }
 
 @end
